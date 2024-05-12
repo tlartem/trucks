@@ -9,6 +9,7 @@ class Car(rx.Model, table=True):
     length: float
     width: float
     height: float
+    status: str
 
 
 def get_english_from_sort_string(russian_string):
@@ -33,12 +34,21 @@ class State(rx.State):
     width: float
     height: float
     cars: list[Car] = []
+    status: str = "Свободна"
     sort_value: float
     num_cars: int
+    switchBusyStatus: bool = False
+    switchFreeStatus: bool = False
 
     def load_entries(self) -> list[Car]:
         with rx.session() as session:
             self.cars = session.exec(select(Car)).all()
+            if self.switchBusyStatus:
+                self.cars = session.exec(select(Car).where(Car.status == "Занята")).all()
+            if self.switchFreeStatus:
+                self.cars = session.exec(select(Car).where(Car.status == "Свободна")).all()
+            if self.switchBusyStatus and self.switchFreeStatus:
+                self.cars = session.exec(select(Car).where(Car.status == '')).all()
             self.num_cars = len(self.cars)
 
             if self.sort_value:
@@ -47,8 +57,28 @@ class State(rx.State):
                     reverse=True
                 )
 
+    def change_status(self, id):
+        with rx.session() as session:
+            car = session.exec(
+                select(Car).where(Car.id == id)
+            ).first()
+            if car.status == "Свободна":
+                car.status = "Занята"
+            else:
+                car.status = "Свободна"
+            session.status = car.status
+            session.commit()
+        self.load_entries()
+
     def sort_values(self, sort_value):
         self.sort_value = sort_value
+        self.load_entries()
+
+    def switch_busy(self, checked):
+        self.switchBusyStatus = checked
+        self.load_entries()
+    def switch_free(self, checked):
+        self.switchFreeStatus = checked
         self.load_entries()
 
     def set_car_vars(self, car: Car):
@@ -60,6 +90,7 @@ class State(rx.State):
         self.width = car["width"]
         self.length = car["length"]
         self.height = car["height"]
+        self.status = car["status"]
 
     def add_car(self):
         with rx.session() as session:
@@ -74,7 +105,8 @@ class State(rx.State):
                     payload=self.payload,
                     length=self.length,
                     width=self.width,
-                    height=self.height
+                    height=self.height,
+                    status=self.status
                 )
             )
             session.commit()
@@ -92,6 +124,7 @@ class State(rx.State):
             car.length = self.length
             car.width = self.width
             car.height = self.height
+            car.status = self.status
             print(car)
             session.add(car)
             session.commit()
@@ -118,12 +151,21 @@ def show_car(car: Car):
         rx.table.cell(car.length),
         rx.table.cell(car.width),
         rx.table.cell(car.height),
+        rx.table.cell(car.status),
+        rx.table.cell(
+            rx.button(
+                "Сменить",
+                on_click=lambda: State.change_status(car.id),
+                bg="blue",
+                color="white"
+            )
+        ),
         rx.table.cell(
             update_car(car),
         ),
         rx.table.cell(
             rx.button(
-                "Delete",
+                "Удалить",
                 on_click=lambda: State.delete_car(car.car_number),
                 bg="red",
                 color="white",
@@ -242,16 +284,16 @@ def update_car(car):
             ),
         ),
         rx.dialog.content(
-            rx.dialog.title("Customer Details"),
+            rx.dialog.title("Детали записи"),
             rx.dialog.description(
-                "Update your customer profile details.",
+                "Измените детали записи о машине",
                 size="2",
                 mb="4",
                 padding_bottom="1em",
             ),
             rx.flex(
                 rx.text(
-                    "Name",
+                    "Номер",
                     as_="div",
                     size="2",
                     mb="1",
@@ -263,7 +305,7 @@ def update_car(car):
                     on_blur=State.set_car_number,
                 ),
                 rx.text(
-                    "Email",
+                    "Тип",
                     as_="div",
                     size="2",
                     mb="1",
@@ -275,7 +317,7 @@ def update_car(car):
                     on_blur=State.set_car_type,
                 ),
                 rx.text(
-                    "Customer Phone",
+                    "Грузоподъемность, тонн",
                     as_="div",
                     size="2",
                     mb="1",
@@ -285,7 +327,7 @@ def update_car(car):
                     on_blur=State.set_payload,
                 ),
                 rx.text(
-                    "Customer Address",
+                    "Длина, м",
                     as_="div",
                     size="2",
                     mb="1",
@@ -295,7 +337,7 @@ def update_car(car):
                     on_blur=State.set_length,
                 ),
                 rx.text(
-                    "Car width",
+                    "Ширина, м",
                     as_="div",
                     size="2",
                     mb="1",
@@ -305,7 +347,7 @@ def update_car(car):
                     on_blur=State.set_width,
                 ),
                 rx.text(
-                    "Car height",
+                    "Высота, м",
                     as_="div",
                     size="2",
                     mb="1",
@@ -320,14 +362,14 @@ def update_car(car):
             rx.flex(
                 rx.dialog.close(
                     rx.button(
-                        "Cancel",
+                        "Отменить",
                         variant="soft",
                         color_scheme="gray",
                     ),
                 ),
                 rx.dialog.close(
                     rx.button(
-                        "Submit Customer",
+                        "Подтвердить",
                         on_click=State.update_car,
                         variant="solid",
                     ),

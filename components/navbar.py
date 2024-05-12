@@ -1,10 +1,12 @@
 import reflex as rx
 
 
-def navbar(add_customer):
+def navbar(add_customer, add_visible=True):
+    if not add_visible:
+        add_customer = lambda: rx.button("Добавить заявку")
     return rx.hstack(
         rx.image(src="/logo.png", width="7em"),
-        rx.link("Таблица автомобилей", href="/table"),
+        rx.link("Таблица автомобилей", href="/"),
         rx.link("Обработка заявок", href="/requests"),
         rx.spacer(),
         add_customer(),

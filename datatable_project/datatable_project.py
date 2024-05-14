@@ -27,8 +27,10 @@ class FormState(rx.State):
     car: str = ''
 
     def handle_submit(self, form_data: dict):
+        is_done = False
         try:
             convert_values_to_float(form_data)
+            id = None
             with rx.session() as session:
                 self.cars = session.exec(select(Car).where(Car.payload >= form_data['payload'],
                                                            Car.width >= form_data['width'],
@@ -36,11 +38,21 @@ class FormState(rx.State):
                                                            Car.length >= form_data['length'])).first()
                 if self.cars and self.cars.status != "Занята":
                     self.car = self.cars.car_number + ' - вы успешно заняли машину под данным номером.'
-                    State.change_status(self.cars.id)
+                    id = self.cars.id
+                    is_done = True
                 else:
                     self.car = 'Нет доступных машин для перевозки заданного груза'
         except ValueError:
             self.car = 'Введены неверные значения для габаритов'
+        if is_done:
+            with rx.session() as session:
+                car = session.exec(
+                    select(Car).where(Car.id == id)
+                ).first()
+                car.status = "Занята"
+                session.status = car.status
+                session.commit()
+                State.load_entries()
 
 
 def content():
@@ -122,15 +134,23 @@ def req() -> rx.Component:
                     placeholder="Высота, м",
                     name="height",
                 ),
-                rx.button("Подтвердить", type="submit"),
+                rx.dialog.root(
+                    rx.dialog.trigger(rx.button("Подтвердить", type="submit")),
+                    rx.dialog.content(
+                        rx.dialog.title("Результаты заявки"),
+                        rx.dialog.description(
+                            FormState.car,
+                        ),
+                        rx.dialog.close(
+                            rx.button("Закрыть", size="2"),
+                        ),
+                    ),
+                ),
                 align='center'
             ),
             on_submit=FormState.handle_submit,
             reset_on_submit=True,
         ),
-        rx.divider(),
-        rx.heading("Results"),
-        rx.text(FormState.car),
         align='center'
     )
 

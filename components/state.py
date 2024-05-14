@@ -77,6 +77,7 @@ class State(rx.State):
     def switch_busy(self, checked):
         self.switchBusyStatus = checked
         self.load_entries()
+
     def switch_free(self, checked):
         self.switchFreeStatus = checked
         self.load_entries()
@@ -95,7 +96,7 @@ class State(rx.State):
     def add_car(self):
         with rx.session() as session:
             if session.exec(
-                select(Car).where(Car.car_number == self.car_number)
+                    select(Car).where(Car.car_number == self.car_number)
             ).first():
                 return rx.window_alert("Car already exists")
             session.add(
@@ -111,7 +112,7 @@ class State(rx.State):
             )
             session.commit()
         self.load_entries()
-        return rx.window_alert(f"Car {self.car_number} has been added.")
+        return None
 
     def update_car(self):
         with rx.session() as session:
@@ -178,10 +179,10 @@ def add_car():
     return rx.dialog.root(
         rx.dialog.trigger(
             rx.button(
-                    "Добавить машину",
-                    rx.icon(tag="plus", width=24, height=24),
-                    spacing="3",
-                    size="2"
+                "Добавить машину",
+                rx.icon(tag="plus", width=24, height=24),
+                spacing="3",
+                size="2"
             ),
         ),
         rx.dialog.content(
@@ -271,6 +272,8 @@ def add_car():
             border_radius="4px",
         ),
     )
+
+
 
 
 def update_car(car):
@@ -385,4 +388,3 @@ def update_car(car):
             border_radius="4px",
         ),
     )
-

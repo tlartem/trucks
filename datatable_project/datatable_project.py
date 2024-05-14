@@ -6,6 +6,43 @@ from components.state import *
 filename = f"{config.app_name}/{config.app_name}.py"
 
 
+def convert_values_to_float(dictionary):
+    new_dict = {}
+    for key, value in dictionary.items():
+        if isinstance(value, (int, float)):
+            new_dict[key] = float(value)
+        elif isinstance(value, str):
+            try:
+                new_dict[key] = float(value)
+            except ValueError:
+                raise ValueError()
+        else:
+            raise TypeError()
+    return new_dict
+
+
+class FormState(rx.State):
+    form_data: dict = {}
+    cars: list = []
+    car: str = ''
+
+    def handle_submit(self, form_data: dict):
+        try:
+            convert_values_to_float(form_data)
+            with rx.session() as session:
+                self.cars = session.exec(select(Car).where(Car.payload >= form_data['payload'],
+                                                           Car.width >= form_data['width'],
+                                                           Car.height >= form_data['height'],
+                                                           Car.length >= form_data['length'])).first()
+                if self.cars and self.cars.status != "Занята":
+                    self.car = self.cars.car_number + ' - вы успешно заняли машину под данным номером.'
+                    State.change_status(self.cars.id)
+                else:
+                    self.car = 'Нет доступных машин для перевозки заданного груза'
+        except ValueError:
+            self.car = 'Введены неверные значения для габаритов'
+
+
 def content():
     return rx.fragment(
         rx.vstack(
@@ -17,12 +54,14 @@ def content():
                 ),
                 rx.spacer(),
                 rx.flex(
-                    rx.switch(default_checked=False, checked=~State.switchBusyStatus, on_change=lambda v: State.switch_busy(~v)),
+                    rx.switch(default_checked=False, checked=~State.switchBusyStatus,
+                              on_change=lambda v: State.switch_busy(~v)),
                     rx.text("Свободные"),
                     spacing="2",
                 ),
                 rx.flex(
-                    rx.switch(default_checked=False, checked=~State.switchFreeStatus, on_change=lambda v: State.switch_free(~v)),
+                    rx.switch(default_checked=False, checked=~State.switchFreeStatus,
+                              on_change=lambda v: State.switch_free(~v)),
                     rx.text("Занятые"),
                     spacing="2",
                 ),
@@ -60,31 +99,41 @@ def content():
         ),
     )
 
+
 def req() -> rx.Component:
-    return rx.form(
-        rx.flex(
-            rx.input(
-                placeholder="Text to translate",
-                debounce_timeout=300,
-                size="3",
-                name="text",
+    return rx.vstack(
+        rx.heading('Создание заявки'),
+        rx.text('Для создания новой заявки укажите все характеристики груза.'),
+        rx.form(
+            rx.vstack(
+                rx.input(
+                    placeholder="Вес, тонны",
+                    name="payload",
+                ),
+                rx.input(
+                    placeholder="Длина, м",
+                    name="length",
+                ),
+                rx.input(
+                    placeholder="Ширина, м",
+                    name="width",
+                ),
+                rx.input(
+                    placeholder="Высота, м",
+                    name="height",
+                ),
+                rx.button("Подтвердить", type="submit"),
+                align='center'
             ),
-            rx.select(
-                placeholder="Select a language",
-                margin_top="1rem",
-                size="3",
-                items=['fruit', 'apple', 'banana']
-            ),
-            rx.button(
-                "Post",
-                size="3",
-            ),
-            direction="column",
-            spacing="4",
-            width="100%",
-            align="center"
-        )
+            on_submit=FormState.handle_submit,
+            reset_on_submit=True,
+        ),
+        rx.divider(),
+        rx.heading("Results"),
+        rx.text(FormState.car),
+        align='center'
     )
+
 
 def index() -> rx.Component:
     return rx.fragment(
@@ -96,6 +145,7 @@ def index() -> rx.Component:
         ),
         font_family="Tahoma"
     )
+
 
 def requests() -> rx.Component:
     return rx.fragment(

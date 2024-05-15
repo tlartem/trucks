@@ -1,4 +1,9 @@
 *.db
 *.py[cod]
+.idea
 .web
 __pycache__/
+alembic
+alembic.ini
+reflex.db
+venv

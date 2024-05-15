@@ -98,7 +98,7 @@ class State(rx.State):
             if session.exec(
                     select(Car).where(Car.car_number == self.car_number)
             ).first():
-                return rx.window_alert("Car already exists")
+                return rx.window_alert("Такая машина уже существует")
             session.add(
                 Car(
                     car_number=self.car_number,
@@ -147,30 +147,33 @@ class State(rx.State):
 def show_car(car: Car):
     return rx.table.row(
         rx.table.cell(rx.text.kbd(car.car_number, size="5")),
-        rx.table.cell(car.car_type),
-        rx.table.cell(car.payload),
-        rx.table.cell(car.length),
-        rx.table.cell(car.width),
-        rx.table.cell(car.height),
-        rx.table.cell(car.status),
+        rx.table.cell(car.car_type, align='center'),
+        rx.table.cell(car.payload, align='center'),
+        rx.table.cell(car.length, align='center'),
+        rx.table.cell(car.width, align='center'),
+        rx.table.cell(car.height, align='center'),
+        rx.table.cell(car.status, align='center'),
         rx.table.cell(
             rx.button(
                 "Сменить",
                 on_click=lambda: State.change_status(car.id),
-                bg="blue",
-                color="white"
-            )
+                # bg="blue",
+                # color="black"
+            ),
+            align = 'center'
         ),
         rx.table.cell(
             update_car(car),
+            align='center'
         ),
         rx.table.cell(
             rx.button(
                 "Удалить",
                 on_click=lambda: State.delete_car(car.car_number),
-                bg="red",
-                color="white",
+                color_scheme="ruby"
+                # color="black",
             ),
+            align='center'
         ),
     )
 
@@ -281,10 +284,11 @@ def update_car(car):
         rx.dialog.trigger(
             rx.button(
                 rx.icon("square_pen", width=24, height=24),
-                bg="red",
-                color="white",
-                on_click=lambda: State.set_car_vars(car),
+                # color="white",
+                on_click=lambda: State.set_car_vars(car)
             ),
+            align='center',
+            bcolor_scheme="iris",
         ),
         rx.dialog.content(
             rx.dialog.title("Детали записи"),

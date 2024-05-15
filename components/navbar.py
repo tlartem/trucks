@@ -8,6 +8,7 @@ def navbar(add_car, add_visible=True):
         rx.image(src="/logo.png", width="7em"),
         rx.link("Таблица автомобилей", href="/"),
         rx.link("Обработка заявок", href="/requests"),
+        rx.link("Сменить тему", href="/theme"),
         rx.spacer(),
         add_car(),
 

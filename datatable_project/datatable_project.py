@@ -92,16 +92,16 @@ def content():
             rx.table.root(
                 rx.table.header(
                     rx.table.row(
-                        rx.table.column_header_cell("Номер"),
-                        rx.table.column_header_cell("Тип"),
-                        rx.table.column_header_cell("Грузоподъемность, тонн"),
-                        rx.table.column_header_cell("Длина, м"),
-                        rx.table.column_header_cell("Ширина, м"),
-                        rx.table.column_header_cell("Высота"),
-                        rx.table.column_header_cell("Статус"),
-                        rx.table.column_header_cell("Занять"),
-                        rx.table.column_header_cell("Редактировать"),
-                        rx.table.column_header_cell("Удалить"),
+                        rx.table.column_header_cell("Номер", align='center') ,
+                        rx.table.column_header_cell("Тип", align='center'),
+                        rx.table.column_header_cell("Грузоподъемность, тонн", align='center'),
+                        rx.table.column_header_cell("Длина, м", align='center'),
+                        rx.table.column_header_cell("Ширина, м", align='center'),
+                        rx.table.column_header_cell("Высота", align='center'),
+                        rx.table.column_header_cell("Статус", align='center'),
+                        rx.table.column_header_cell("Занять", align='center'),
+                        rx.table.column_header_cell("Редактировать", align='center'),
+                        rx.table.column_header_cell("Удалить", align='center'),
                     ),
                 ),
                 rx.table.body(rx.foreach(State.cars, show_car)),
@@ -163,6 +163,7 @@ def index() -> rx.Component:
             margin_top="calc(50px + 2em)",
             padding="4em",
         ),
+        # rx.theme_panel(),
         font_family="Tahoma"
     )
 
@@ -178,12 +179,25 @@ def requests() -> rx.Component:
         font_family="Tahoma",
     )
 
+def theme() -> rx.Component:
+    return rx.fragment(
+        navbar(add_car, add_visible=False),
+        rx.box(
+            rx.theme_panel(align='center'),
+            margin_top="calc(50px + 2em)",
+            padding="4em",
+            align="center"
+        ),
+        font_family="Tahoma"
+    )
+
 
 app = rx.App(
     theme=rx.theme(
-        appearance="light", has_background=True, accent_color="blue",
-        stylesheets=["https://fonts.googleapis.com/css?family=Inter"],
+        appearance="light", grayColor="slate", radius='small', has_background=True, accent_color="teal",
+        stylesheets=["https://fonts.googleapis.com/css?family=Tahoma"],
     )
 )
 app.add_page(index, on_load=State.on_load, title="Машины")
 app.add_page(requests, route='/requests', title="Составить заявку")
+app.add_page(theme, route='/theme', title="Настройки темы")
